@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FF14 Character Card Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;700&family=Cinzel:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=Noto+Serif+JP:wght@400;700&family=Pacifico&family=Comfortaa:wght@400;700&family=Nunito:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@400;700&family=Satisfy&family=Quicksand:wght@400;700&family=Josefin+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #F5F5F7;
+            --text-color: #2C302E;
+            --accent-color: #E0B0B0;
+            --slit-angle: -12deg;
+            --box-opacity: 0.4;
+            --card-font: 'Cormorant Garamond', serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #E5E5E7;
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            padding: 20px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+            max-width: 1250px;
+            width: 100%;
+            gap: 24px;
+            box-sizing: border-box;
+        }
+
+        @media (min-width: 900px) {
+            .container {
+                flex-direction: row;
+                padding: 30px;
+            }
+        }
+
+        .editor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: #F9F9FA;
+            padding: 20px;
+            border-radius: 16px;
+            overflow-y: auto;
+        }
+
+        @media (min-width: 900px) {
+            .editor-panel {
+                max-height: 85vh;
+                padding: 25px;
+            }
+        }
+
+        .panel-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-bottom: 1px solid #ECECED;
+            padding-bottom: 15px;
+        }
+        .panel-section:last-child { border: none; }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #8E8E93;
+            margin-bottom: 5px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .form-group input[type="text"], .form-group textarea, .form-group select {
+            padding: 12px;
+            border: 1px solid #E5E5E7;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #FFF;
+            color: var(--text-color);
+            font-family: inherit;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .control-label {
+            font-size: 13px;
+            font-weight: 600;
+            width: 120px;
+            min-width: 120px;
+            color: #48484A;
+        }
+
+        @media (min-width: 900px) {
+            .control-label { width: 140px; min-width: 140px; }
+        }
+
+        .control-row input[type="range"] {
+            flex: 1;
+            accent-color: var(--text-color);
+            height: 4px;
+            background: #E5E5EA;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        .value-badge {
+            background: #F2F2F7;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            min-width: 35px;
+            text-align: center;
+            color: #3A3A3C;
+        }
+
+        .color-select {
+            padding: 8px 12px;
+            border: 1px solid #E5E5EA;
+            border-radius: 12px;
+            font-size: 13px;
+            background: #F2F2F7;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .btn {
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: var(--text-color); color: #fff; }
+        .btn-primary:hover { background: #454A47; transform: translateY(-1px); }
+
+        .preview-panel {
+            flex: 1.3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            min-width: 0;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #card-scale-wrapper {
+            width: 600px;
+            height: 315px;
+            transform-origin: top left;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        #character-card {
+            width: 600px;
+            height: 315px;
+            background-color: var(--bg-color);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+            border-radius: 4px;
+            cursor: grab;
+            user-select: none;
+        }
+        #character-card:active { cursor: grabbing; }
+
+        .slits-container {
+            position: absolute;
+            right: -50px;
+            top: -100px;
+            width: 70%;
+            height: 180%;
+            display: flex;
+            gap: 10px;
+            transform: rotate(var(--slit-angle));
+            transform-origin: center;
+            pointer-events: none;
+        }
+
+        .slit {
+            flex: 1;
+            background: #E5E5E7;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .slit img {
+            position: absolute;
+            height: 100%;
+            width: auto;
+            object-fit: cover;
+            transform-origin: center;
+            left: -50%;
+            pointer-events: none;
+        }
+
+        .info-area {
+            position: absolute;
+            left: 30px;
+            top: 30px;
+            bottom: 30px;
+            width: 45%;
+            background: rgba(255, 255, 255, var(--box-opacity));
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-left: 4px solid var(--accent-color);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+            pointer-events: none;
+            transition: background 0.2s;
+        }
+
+        /* 権利表記の追加スタイル */
+        .copyright {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 10px;
+            color: #636366;
+            letter-spacing: 0.5px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .meta-text { font-size: 11px; letter-spacing: 2px; color: #636366; font-weight: 700; font-family: var(--card-font); }
+        .char-name { font-family: var(--card-font); font-size: 32px; font-weight: bold; margin: 8px 0; letter-spacing: 1px; }
+        .job-text { font-size: 11px; font-weight: 700; margin-top: 15px; letter-spacing: 1px; font-family: var(--card-font); }
+        .quote-text { font-family: var(--card-font); font-style: italic; font-size: 14px; color: #48484A; margin-top: 20px; line-height: 1.5; }
+        
+        .hint-text {
+            font-size: 12px;
+            color: #8E8E93;
+            text-align: center;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="editor-panel">
+        <div class="panel-section">
+            <div class="section-title">Design Controls</div>
+            <div class="form-group">
+                <label>1. キャラクター画像を選択</label>
+                <input type="file" id="image-input" accept="image/*">
+            </div>
+            
+            <div class="form-group" style="gap: 15px; margin-top: 10px;">
+                <div class="control-row">
+                    <span class="control-label">Slit Angle</span>
+                    <input type="range" id="input-angle" min="-18" max="18" value="-12">
+                    <span class="value-badge" id="val-angle">-12</span>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">Box Opacity (%)</span>
+                    <input type="range" id="input-opacity" min="10" max="90" value="40">
+                    <span class="value-badge" id="val-opacity">40</span>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">Accent Color</span>
+                    <select id="input-color" class="color-select">
+                        <option value="#E0B0B0" style="color:#E0B0B0;font-weight:bold;">■ ローズピンク</option>
+                        <option value="#D4AF37" style="color:#D4AF37;font-weight:bold;">■ ゴールド</option>
+                        <option value="#8EA8BD" style="color:#8EA8BD;font-weight:bold;">■ スカイブルー</option>
+                        <option value="#A3B899" style="color:#A3B899;font-weight:bold;">■ セージグリーン</option>
+                        <option value="#C9A0DC" style="color:#C9A0DC;font-weight:bold;">■ ラベンダー</option>
+                        <option value="#F4A460" style="color:#F4A460;font-weight:bold;">■ サンドブラウン</option>
+                        <option value="#B0C4DE" style="color:#B0C4DE;font-weight:bold;">■ スチールブルー</option>
+                        <option value="#E8A0BF" style="color:#E8A0BF;font-weight:bold;">■ コーラルピンク</option>
+                        <option value="#98C1A0" style="color:#98C1A0;font-weight:bold;">■ ミントグリーン</option>
+                        <option value="#C4A882" style="color:#C4A882;font-weight:bold;">■ キャメル</option>
+                        <option value="#A8B8C8" style="color:#A8B8C8;font-weight:bold;">■ スレートグレー</option>
+                        <option value="#E8D5A3" style="color:#E8D5A3;font-weight:bold;">■ シャンパン</option>
+                        <option value="#D4B8C8" style="color:#D4B8C8;font-weight:bold;">■ モーブ</option>
+                        <option value="#B8D4C8" style="color:#B8D4C8;font-weight:bold;">■ アクアミント</option>
+                        <option value="#FFFFFF" style="color:#AAAAAA;font-weight:bold;">■ ホワイト</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">Card Font</span>
+                    <select id="input-font" class="color-select" style="max-width:200px;">
+                        <option value="'Cormorant Garamond', serif" style="font-family:'Cormorant Garamond',serif;">Font — Cormorant Garamond</option>
+                        <option value="'Cinzel', serif" style="font-family:'Cinzel',serif;">Font — Cinzel</option>
+                        <option value="'EB Garamond', serif" style="font-family:'EB Garamond',serif;">Font — EB Garamond</option>
+                        <option value="'Libre Baskerville', serif" style="font-family:'Libre Baskerville',serif;">Font — Libre Baskerville</option>
+                        <option value="'Playfair Display', serif" style="font-family:'Playfair Display',serif;">Font — Playfair Display</option>
+                        <option value="'Lora', serif" style="font-family:'Lora',serif;">Font — Lora</option>
+                        <option value="'Noto Serif JP', serif" style="font-family:'Noto Serif JP',serif;">Font — Noto Serif JP</option>
+                        <option value="'Montserrat', sans-serif" style="font-family:'Montserrat',sans-serif;">Font — Montserrat</option>
+                        <option value="'Pacifico', cursive" style="font-family:'Pacifico',cursive;">Font — Pacifico</option>
+                        <option value="'Dancing Script', cursive" style="font-family:'Dancing Script',cursive;">Font — Dancing Script</option>
+                        <option value="'Satisfy', cursive" style="font-family:'Satisfy',cursive;">Font — Satisfy</option>
+                        <option value="'Comfortaa', sans-serif" style="font-family:'Comfortaa',sans-serif;">Font — Comfortaa</option>
+                        <option value="'Nunito', sans-serif" style="font-family:'Nunito',sans-serif;">Font — Nunito</option>
+                        <option value="'Quicksand', sans-serif" style="font-family:'Quicksand',sans-serif;">Font — Quicksand</option>
+                        <option value="'Josefin Sans', sans-serif" style="font-family:'Josefin Sans',sans-serif;">Font — Josefin Sans</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">Image Scale</span>
+                    <input type="range" id="input-scale" min="0.5" max="3" step="0.05" value="1.5">
+                    <span class="value-badge" id="val-scale">1.5</span>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">© 文字色</span>
+                    <select id="input-copyright-color" class="color-select">
+                        <option value="#636366">グレー</option>
+                        <option value="#FFFFFF">ホワイト</option>
+                        <option value="#000000">ブラック</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <div class="section-title">Profile Text</div>
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="input-name" placeholder="キャラクター名を入力してね" value="">
+            </div>
+            
+            <div class="form-group">
+                <label>DC / Server</label>
+                <select id="input-server">
+                    <option value="">— 選択してください —</option>
+                    <optgroup label="Elemental">
+                        <option value="ELEMENTAL / AEGIS">Aegis (Elemental)</option>
+                        <option value="ELEMENTAL / ATMOS">Atmos (Elemental)</option>
+                        <option value="ELEMENTAL / CARBUNCLE">Carbuncle (Elemental)</option>
+                        <option value="ELEMENTAL / GARUDA">Garuda (Elemental)</option>
+                        <option value="ELEMENTAL / GUNGNIR">Gungnir (Elemental)</option>
+                        <option value="ELEMENTAL / KUJATA">Kujata (Elemental)</option>
+                        <option value="ELEMENTAL / TONBERRY">Tonberry (Elemental)</option>
+                        <option value="ELEMENTAL / TYPHON">Typhon (Elemental)</option>
+                    </optgroup>
+                    <optgroup label="Gaia">
+                        <option value="GAIA / ALEXANDER">Alexander (Gaia)</option>
+                        <option value="GAIA / BAHAMUT">Bahamut (Gaia)</option>
+                        <option value="GAIA / DURANDAL">Durandal (Gaia)</option>
+                        <option value="GAIA / FENRIR">Fenrir (Gaia)</option>
+                        <option value="GAIA / IFRIT">Ifrit (Gaia)</option>
+                        <option value="GAIA / RIDILL">Ridill (Gaia)</option>
+                        <option value="GAIA / TIAMAT">Tiamat (Gaia)</option>
+                        <option value="GAIA / ULTIMA">Ultima (Gaia)</option>
+                    </optgroup>
+                    <optgroup label="Mana">
+                        <option value="MANA / ANIMA">Anima (Mana)</option>
+                        <option value="MANA / ASURA">Asura (Mana)</option>
+                        <option value="MANA / CHOCOBO">Chocobo (Mana)</option>
+                        <option value="MANA / HADES">Hades (Mana)</option>
+                        <option value="MANA / IXION">Ixion (Mana)</option>
+                        <option value="MANA / MASAMUNE">Masamune (Mana)</option>
+                        <option value="MANA / PANDAEMONIUM">Pandaemonium (Mana)</option>
+                        <option value="MANA / TITAN">Titan (Mana)</option>
+                    </optgroup>
+                    <optgroup label="Meteor">
+                        <option value="METEOR / BELIAS">Belias (Meteor)</option>
+                        <option value="METEOR / MANDRAGORA">Mandragora (Meteor)</option>
+                        <option value="METEOR / RAMUH">Ramuh (Meteor)</option>
+                        <option value="METEOR / SHINRYU">Shinryu (Meteor)</option>
+                        <option value="METEOR / UNICORN">Unicorn (Meteor)</option>
+                        <option value="METEOR / VALEFOR">Valefor (Meteor)</option>
+                        <option value="METEOR / YOJIMBO">Yojimbo (Meteor)</option>
+                        <option value="METEOR / ZEROMUS">Zeromus (Meteor)</option>
+                    </optgroup>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Main Job</label>
+                <select id="input-job">
+                    <option value="">— 選択してください —</option>
+                    <optgroup label="TANK">
+                        <option value="PALADIN">ナイト (Paladin)</option>
+                        <option value="WARRIOR">戦士 (Warrior)</option>
+                        <option value="DARK KNIGHT">暗黒騎士 (Dark Knight)</option>
+                        <option value="GUNBREAKER">ガンブレイカー (Gunbreaker)</option>
+                    </optgroup>
+                    <optgroup label="HEALER">
+                        <option value="WHITE MAGE">白魔道士 (White Mage)</option>
+                        <option value="SCHOLAR">学者 (Scholar)</option>
+                        <option value="ASTROLOGIAN">占星術師 (Astrologian)</option>
+                        <option value="SAGE">賢者 (Sage)</option>
+                    </optgroup>
+                    <optgroup label="近接DPS (Melee)">
+                        <option value="MONK">モンク (Monk)</option>
+                        <option value="DRAGOON">竜騎士 (Dragoon)</option>
+                        <option value="NINJA">忍者 (Ninja)</option>
+                        <option value="SAMURAI">侍 (Samurai)</option>
+                        <option value="REAPER">リーパー (Reaper)</option>
+                        <option value="VIPER">ヴァイパー (Viper)</option>
+                    </optgroup>
+                    <optgroup label="遠隔物理DPS (Ranged)">
+                        <option value="BARD">吟遊詩人 (Bard)</option>
+                        <option value="MACHINIST">機工士 (Machinist)</option>
+                        <option value="DANCER">踊り子 (Dancer)</option>
+                    </optgroup>
+                    <optgroup label="遠隔魔法DPS (Caster)">
+                        <option value="BLACK MAGE">黒魔道士 (Black Mage)</option>
+                        <option value="SUMMONER">召喚士 (Summoner)</option>
+                        <option value="RED MAGE">赤魔道士 (Red Mage)</option>
+                        <option value="PICTOMANCER">ピクトマンサー (Pictomancer)</option>
+                    </optgroup>
+                    <optgroup label="LIMITED JOB">
+                        <option value="BLUE MAGE">青魔道士 (Blue Mage)</option>
+                    </optgroup>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>自己紹介 (Quote)</label>
+                <textarea id="input-quote" rows="2" placeholder="自己紹介を入力してね"></textarea>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" id="download-btn">カードをダウンロード</button>
+    </div>
+
+    <div class="preview-panel">
+        <div id="card-scale-wrapper">
+        <div id="character-card">
+            <div class="slits-container" id="slits-container"></div>
+            <!-- 権利表記追加 -->
+            <div class="copyright">© SQUARE ENIX</div>
+            
+            <div class="info-area">
+                <div>
+                    <div class="meta-text" id="card-server"></div>
+                    <div class="char-name" id="card-name"></div>
+                </div>
+                <div>
+                    <div class="job-text">MAIN JOB // <span id="card-job" style="color: var(--accent-color);"></span></div>
+                    <div class="quote-text" id="card-quote"></div>
+                </div>
+            </div>
+        </div>
+        </div>
+        <div class="hint-text">
+            💡 <strong>画像の操作方法:</strong><br>
+            カードの上を直接<strong>ドラッグ（スマホはスワイプ）</strong>すると画像を自由自在に移動できます。<br>
+            マウスの<strong>ホイール回転</strong>、または上の「Image Scale」スライダーで拡大縮小が可能です。
+        </div>
+    </div>
+</div>
+
+<script>
+    let imgX = 0; let imgY = 0; let imgScale = 1.5;
+    let isDragging = false; let startX = 0; let startY = 0;
+
+    function scaleCard() {
+        const wrapper = document.getElementById('card-scale-wrapper');
+        const panel = wrapper.parentElement;
+        const panelWidth = panel.clientWidth - 40;
+        const scale = Math.min(1, panelWidth / 600);
+        wrapper.style.transform = `scale(${scale})`;
+        // wrapperの表示高さをscale後に合わせる
+        const scaledHeight = Math.round(315 * scale);
+        wrapper.style.height = scaledHeight + 'px';
+        wrapper.style.width = Math.round(600 * scale) + 'px';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        updateSlits();
+        scaleCard();
+    });
+
+    window.addEventListener('resize', scaleCard);
+
+    const inputAngle = document.getElementById('input-angle');
+    inputAngle.addEventListener('input', (e) => {
+        document.getElementById('val-angle').innerText = e.target.value;
+        document.documentElement.style.setProperty('--slit-angle', `${e.target.value}deg`);
+        updateImagesTransform();
+    });
+
+    const inputSlitCount = { value: '1' }; // slit count固定1（UI非表示）
+
+    const inputOpacity = document.getElementById('input-opacity');
+    inputOpacity.addEventListener('input', (e) => {
+        document.getElementById('val-opacity').innerText = e.target.value;
+        document.documentElement.style.setProperty('--box-opacity', e.target.value / 100);
+    });
+
+    const inputColor = document.getElementById('input-color');
+    inputColor.addEventListener('change', (e) => {
+        document.documentElement.style.setProperty('--accent-color', e.target.value);
+        // update select text color to match chosen color
+        inputColor.style.color = e.target.value === '#FFFFFF' ? '#AAAAAA' : e.target.value;
+    });
+    // initialize color on load
+    inputColor.style.color = '#E0B0B0';
+
+    const inputFont = document.getElementById('input-font');
+    inputFont.addEventListener('change', (e) => {
+        document.documentElement.style.setProperty('--card-font', e.target.value);
+        // セレクト自体にもフォントを反映
+        inputFont.style.fontFamily = e.target.value.replace(/'/g, '');
+    });
+
+    const inputCopyrightColor = document.getElementById('input-copyright-color');
+    inputCopyrightColor.addEventListener('change', (e) => {
+        document.querySelector('.copyright').style.color = e.target.value;
+    });
+
+    const inputScale = document.getElementById('input-scale');
+    inputScale.addEventListener('input', (e) => {
+        imgScale = parseFloat(e.target.value);
+        document.getElementById('val-scale').innerText = imgScale.toFixed(2);
+        updateImagesTransform();
+    });
+
+    // テキスト・セレクト入力の反映
+    ['name', 'server', 'job'].forEach(id => {
+        const element = document.getElementById(`input-${id}`);
+        const updateFn = (e) => {
+            document.getElementById(`card-${id}`).innerText = e.target.value;
+        };
+        element.addEventListener('input', updateFn);
+        element.addEventListener('change', updateFn);
+    });
+
+    // Quote: 空の場合は""を表示しない
+    const quoteInput = document.getElementById('input-quote');
+    const updateQuote = (e) => {
+        const value = e.target.value.trim();
+        document.getElementById('card-quote').innerText = value;
+    };
+    quoteInput.addEventListener('input', updateQuote);
+    quoteInput.addEventListener('change', updateQuote);
+
+    function updateSlits() {
+        const count = parseInt(inputSlitCount.value);
+        const container = document.getElementById('slits-container');
+        const currentImgSrc = document.querySelector('.slit img')?.src || '';
+        
+        container.innerHTML = '';
+        for (let i = 1; i <= count; i++) {
+            const slit = document.createElement('div');
+            slit.className = 'slit';
+            const img = document.createElement('img');
+            img.src = currentImgSrc;
+            slit.appendChild(img);
+            container.appendChild(slit);
+        }
+        updateImagesTransform();
+    }
+
+    document.getElementById('image-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const imgs = document.querySelectorAll('.slit img');
+                imgs.forEach(img => img.src = event.target.result);
+                imgX = 0; imgY = 0; imgScale = 1.5;
+                inputScale.value = 1.5;
+                document.getElementById('val-scale').innerText = "1.50";
+                updateImagesTransform();
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    function updateImagesTransform() {
+        const imgs = document.querySelectorAll('.slit img');
+        const angle = parseInt(inputAngle.value);
+        imgs.forEach(img => {
+            img.style.transform = `translate(${imgX}px, ${imgY}px) rotate(${-angle}deg) scale(${imgScale})`;
+        });
+    }
+
+    const card = document.getElementById('character-card');
+    card.addEventListener('mousedown', (e) => {
+        if (!document.querySelector('.slit img')?.src) return;
+        isDragging = true;
+        startX = e.clientX - imgX; startY = e.clientY - imgY;
+    });
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        imgX = e.clientX - startX; imgY = e.clientY - startY;
+        updateImagesTransform();
+    });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+
+    card.addEventListener('wheel', (e) => {
+        if (!document.querySelector('.slit img')?.src) return;
+        e.preventDefault();
+        if (e.deltaY < 0) imgScale += 0.05; else imgScale -= 0.05;
+        imgScale = Math.min(Math.max(0.5, imgScale), 3.0);
+        inputScale.value = imgScale;
+        document.getElementById('val-scale').innerText = imgScale.toFixed(2);
+        updateImagesTransform();
+    }, { passive: false });
+
+    card.addEventListener('touchstart', (e) => {
+        if (!document.querySelector('.slit img')?.src) return;
+        isDragging = true;
+        const touch = e.touches[0];
+        startX = touch.clientX - imgX; startY = touch.clientY - imgY;
+    });
+    window.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const touch = e.touches[0];
+        imgX = touch.clientX - startX; imgY = touch.clientY - startY;
+        updateImagesTransform();
+    }, { passive: true });
+    window.addEventListener('touchend', () => { isDragging = false; });
+
+    document.getElementById('download-btn').addEventListener('click', () => {
+        const targetCard = document.getElementById('character-card');
+        html2canvas(targetCard, {
+            scale: 1, useCORS: true, logging: false, backgroundColor: null
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `${document.getElementById('card-name').innerText}_card.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    });
+</script>
+</body>
+</html>
