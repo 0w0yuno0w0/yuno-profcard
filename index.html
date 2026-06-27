@@ -15,7 +15,6 @@
             --text-color: #2C302E;
             --accent-color: #E0B0B0;
             --slit-angle: -12deg;
-            --box-opacity: 0.4;
             --card-font: 'Cormorant Garamond', serif;
         }
 
@@ -275,9 +274,6 @@
             top: 30px;
             bottom: 30px;
             width: 45%;
-            background: rgba(255, 255, 255, var(--box-opacity));
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
             border-left: 4px solid var(--accent-color);
             padding: 25px;
             display: flex;
@@ -285,7 +281,22 @@
             justify-content: space-between;
             box-sizing: border-box;
             pointer-events: none;
-            transition: background 0.2s;
+            overflow: hidden;
+        }
+
+        /* Canvas対応のすりガラス効果：::beforeで背景をぼかす */
+        .info-area::before {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            background-color: rgba(255, 255, 255, 0.55);
+            filter: blur(18px);
+            z-index: 0;
+        }
+
+        .info-area > * {
+            position: relative;
+            z-index: 1;
         }
 
         /* 権利表記の追加スタイル */
@@ -333,11 +344,6 @@
                     <span class="control-label">Slit Angle</span>
                     <input type="range" id="input-angle" min="-18" max="18" value="-18">
                     <span class="value-badge" id="val-angle">-18</span>
-                </div>
-                <div class="control-row">
-                    <span class="control-label">Opacity (透明度)</span>
-                    <input type="range" id="input-opacity" min="10" max="90" value="40">
-                    <span class="value-badge" id="val-opacity">40</span>
                 </div>
                 <div class="control-row">
                     <span class="control-label">Accent Color</span>
@@ -651,12 +657,6 @@
     });
 
     const inputSlitCount = { value: '1' }; // slit count固定1（UI非表示）
-
-    const inputOpacity = document.getElementById('input-opacity');
-    inputOpacity.addEventListener('input', (e) => {
-        document.getElementById('val-opacity').innerText = e.target.value;
-        document.documentElement.style.setProperty('--box-opacity', e.target.value / 100);
-    });
 
     const inputColor = document.getElementById('input-color');
     inputColor.addEventListener('change', (e) => {
