@@ -826,13 +826,35 @@
     window.addEventListener('resize', updateDownloadBtnLabel);
 
     function captureCard(callback) {
+        const wrapper = document.getElementById('card-scale-wrapper');
         const targetCard = document.getElementById('character-card');
-        html2canvas(targetCard, {
-            scale: 1, useCORS: true, logging: false, backgroundColor: null,
-            width: 600, height: 315
-        }).then(canvas => {
-            callback(canvas);
-        });
+
+        // scaleを一時的に1に戻す
+        const prev = {
+            transform: wrapper.style.transform,
+            width: wrapper.style.width,
+            height: wrapper.style.height,
+            marginBottom: wrapper.style.marginBottom
+        };
+        wrapper.style.transform = 'scale(1)';
+        wrapper.style.width = '600px';
+        wrapper.style.height = '315px';
+        wrapper.style.marginBottom = '0';
+
+        // 再描画を2フレーム待ってからキャプチャ
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            html2canvas(targetCard, {
+                scale: 1, useCORS: true, logging: false, backgroundColor: null,
+                width: 600, height: 315
+            }).then(canvas => {
+                // scaleを戻す
+                wrapper.style.transform = prev.transform;
+                wrapper.style.width = prev.width;
+                wrapper.style.height = prev.height;
+                wrapper.style.marginBottom = prev.marginBottom;
+                callback(canvas);
+            });
+        }));
     }
 
     document.getElementById('download-btn').addEventListener('click', () => {
