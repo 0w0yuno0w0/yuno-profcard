@@ -207,19 +207,23 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             gap: 20px;
             min-width: 0;
             width: 100%;
             overflow: hidden;
+            padding-top: 10px;
+            box-sizing: border-box;
         }
 
         #card-scale-wrapper {
             width: 600px;
             height: 315px;
-            transform-origin: top left;
+            transform-origin: top center;
             overflow: visible;
             flex-shrink: 0;
+            /* flexの中央寄せ（preview-panelがalign-items:centerのため効く） */
+            align-self: center;
         }
 
         #character-card {
@@ -529,15 +533,10 @@
     function scaleCard() {
         const wrapper = document.getElementById('card-scale-wrapper');
         const panel = wrapper.parentElement;
-        // panelの実際の内側幅
         const panelWidth = panel.getBoundingClientRect().width;
         const scale = Math.min(1, panelWidth / 600);
-        wrapper.style.width = '600px';
-        // transform-origin: top left でscale後にtranslateで中央寄せ
-        const offsetX = (panelWidth - 600 * scale) / 2;
-        wrapper.style.transformOrigin = 'top left';
-        wrapper.style.transform = `translateX(${offsetX}px) scale(${scale})`;
-        // 高さを縮小後に合わせる
+        wrapper.style.transform = `scale(${scale})`;
+        // 高さをscale後に詰める（transformはスペースを取らないため）
         wrapper.style.marginBottom = (Math.round(315 * scale) - 315) + 'px';
     }
 
