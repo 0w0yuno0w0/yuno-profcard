@@ -599,13 +599,6 @@
             </div>
         </div>
         </div>
-        <div id="save-image-area" style="display:none; flex-direction:column; align-items:center; gap:8px; width:100%;">
-            <p style="font-size:12px; color:#8E8E93; text-align:center; margin:0;">
-                画像を長押しして「写真に保存」を選択してください。<br>
-                <span style="font-size:11px;">Long-press the image below and select "Save to Photos".</span>
-            </p>
-            <img id="saved-card-img" src="" alt="card" style="width:100%; max-width:600px; border-radius:4px; box-shadow:0 4px 16px rgba(0,0,0,0.12);">
-        </div>
         <div class="hint-text">
             <strong>画像の操作方法:</strong><br>
             カードの上を直接<strong>ドラッグ（スマホはスワイプ）</strong>すると画像を自由自在に移動できます。<br>
@@ -617,6 +610,16 @@
             On mobile, use a <strong>2-finger pinch</strong> to zoom in/out.
         </div>
     </div>
+</div>
+
+<!-- 保存用モーダル -->
+<div id="save-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; gap:16px;">
+    <p style="color:#fff; font-size:13px; text-align:center; margin:0; line-height:1.7;">
+        画像を長押しして「写真に保存」を選択してください。<br>
+        <span style="font-size:11px; color:#ccc;">Long-press the image and select "Save to Photos".</span>
+    </p>
+    <img id="saved-card-img" src="" alt="card" style="width:100%; max-width:560px; border-radius:6px; box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+    <button onclick="document.getElementById('save-modal').style.display='none'" style="background:#fff; color:#333; border:none; border-radius:20px; padding:10px 32px; font-size:14px; font-weight:700; cursor:pointer;">✕ 閉じる / Close</button>
 </div>
 
 <script>
@@ -823,57 +826,22 @@
     window.addEventListener('resize', updateDownloadBtnLabel);
 
     function captureCard(callback) {
-        const wrapper = document.getElementById('card-scale-wrapper');
         const targetCard = document.getElementById('character-card');
-
-        // wrapperのscaleを一時的に1に戻してカード本体を直接キャプチャ
-        const prevTransform = wrapper.style.transform;
-        const prevWidth = wrapper.style.width;
-        const prevHeight = wrapper.style.height;
-        const prevMarginBottom = wrapper.style.marginBottom;
-
-        wrapper.style.transform = 'scale(1)';
-        wrapper.style.width = '600px';
-        wrapper.style.height = '315px';
-        wrapper.style.marginBottom = '0px';
-
-        // 2フレーム待って再描画を確実にする
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-            html2canvas(targetCard, {
-                scale: 1, useCORS: true, logging: false, backgroundColor: null,
-                width: 600, height: 315,
-                onclone: (doc) => {
-                    // CSS変数を複製ドキュメントにコピー
-                    const vars = ['--accent-color','--slit-angle','--box-opacity','--card-font'];
-                    const style = getComputedStyle(document.documentElement);
-                    vars.forEach(v => {
-                        doc.documentElement.style.setProperty(v, style.getPropertyValue(v));
-                    });
-                }
-            }).then(canvas => {
-                // scaleを元に戻す
-                wrapper.style.transform = prevTransform;
-                wrapper.style.width = prevWidth;
-                wrapper.style.height = prevHeight;
-                wrapper.style.marginBottom = prevMarginBottom;
-                callback(canvas);
-            });
-        }));
+        html2canvas(targetCard, {
+            scale: 1, useCORS: true, logging: false, backgroundColor: null,
+            width: 600, height: 315
+        }).then(canvas => {
+            callback(canvas);
+        });
     }
 
     document.getElementById('download-btn').addEventListener('click', () => {
         if (isMobile()) {
-            // スマホ：画像をプレビュー下に表示して長押し保存
-            // プレビュータブに切り替え
-            switchTab('preview');
+            // スマホ：モーダルで画像表示→長押し保存
             captureCard((canvas) => {
                 const dataUrl = canvas.toDataURL('image/png');
-                const saveArea = document.getElementById('save-image-area');
-                const img = document.getElementById('saved-card-img');
-                img.src = dataUrl;
-                saveArea.style.display = 'flex';
-                // スムーズにスクロール
-                setTimeout(() => saveArea.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+                document.getElementById('saved-card-img').src = dataUrl;
+                document.getElementById('save-modal').style.display = 'flex';
             });
         } else {
             // PC：従来通りダウンロード
