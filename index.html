@@ -845,7 +845,20 @@
         requestAnimationFrame(() => requestAnimationFrame(() => {
             html2canvas(targetCard, {
                 scale: 1, useCORS: true, logging: false, backgroundColor: null,
-                width: 600, height: 315
+                width: 600, height: 315,
+                onclone: (clonedDoc) => {
+                    // CSS変数を全てコピー
+                    const srcStyle = getComputedStyle(document.documentElement);
+                    ['--accent-color','--slit-angle','--box-opacity','--card-font','--bg-color','--text-color'].forEach(v => {
+                        clonedDoc.documentElement.style.setProperty(v, srcStyle.getPropertyValue(v));
+                    });
+                    // 各slit imgのtransformも明示的にコピー
+                    const srcImgs = targetCard.querySelectorAll('.slit img');
+                    const dstImgs = clonedDoc.querySelectorAll('.slit img');
+                    srcImgs.forEach((img, i) => {
+                        if (dstImgs[i]) dstImgs[i].style.transform = img.style.transform;
+                    });
+                }
             }).then(canvas => {
                 // scaleを戻す
                 wrapper.style.transform = prev.transform;
