@@ -217,7 +217,7 @@
         #card-scale-wrapper {
             width: 600px;
             height: 315px;
-            transform-origin: top center;
+            transform-origin: top left;
             overflow: visible;
             flex-shrink: 0;
         }
@@ -529,16 +529,16 @@
     function scaleCard() {
         const wrapper = document.getElementById('card-scale-wrapper');
         const panel = wrapper.parentElement;
-        const panelWidth = panel.clientWidth - 40;
+        // panelの実際の内側幅
+        const panelWidth = panel.getBoundingClientRect().width;
         const scale = Math.min(1, panelWidth / 600);
-        // 常に600pxのままscaleで縮小、高さだけ詰める
         wrapper.style.width = '600px';
-        wrapper.style.transform = `scale(${scale})`;
-        const scaledHeight = Math.round(315 * scale);
-        // transform-origin: top center なので左右marginで中央寄せ
-        const sideMargin = Math.round((panelWidth - 600) / 2);
-        wrapper.style.marginLeft = sideMargin + 'px';
-        wrapper.style.marginBottom = (scaledHeight - 315) + 'px';
+        // transform-origin: top left でscale後にtranslateで中央寄せ
+        const offsetX = (panelWidth - 600 * scale) / 2;
+        wrapper.style.transformOrigin = 'top left';
+        wrapper.style.transform = `translateX(${offsetX}px) scale(${scale})`;
+        // 高さを縮小後に合わせる
+        wrapper.style.marginBottom = (Math.round(315 * scale) - 315) + 'px';
     }
 
     window.addEventListener('DOMContentLoaded', () => {
