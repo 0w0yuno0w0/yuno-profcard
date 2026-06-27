@@ -319,8 +319,28 @@
         .meta-text { font-size: 11px; letter-spacing: 2px; color: #636366; font-weight: 700; font-family: var(--card-font); }
         .char-name { font-family: var(--card-font); font-size: 32px; font-weight: bold; margin: 8px 0; letter-spacing: 1px; }
         .job-text { font-size: 11px; font-weight: 700; margin-top: 15px; letter-spacing: 1px; font-family: var(--card-font); }
-        .quote-text { font-family: var(--card-font); font-style: italic; font-size: 14px; color: #48484A; margin-top: 20px; line-height: 1.5; }
+        .quote-text { font-style: italic; font-size: 14px; color: #48484A; margin-top: 20px; line-height: 1.5; max-height: 105px; overflow: hidden; }
         
+        .quote-font-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .quote-font-row label {
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+        #quote-font-select {
+            flex: 1;
+            min-width: 0;
+        }
+
         .hint-text {
             font-size: 12px;
             color: #8E8E93;
@@ -584,6 +604,30 @@
             
             <div class="form-group">
                 <label>自己紹介 (Quote)</label>
+                <div class="quote-font-row">
+                    <label>
+                        <input type="checkbox" id="quote-font-sync" checked>
+                        Card Fontと統一
+                    </label>
+                    <select id="quote-font-select" class="color-select" style="display:none;">
+                        <option value="inherit">— システムフォント (Free)</option>
+                        <option value="'Cormorant Garamond', serif" style="font-family:'Cormorant Garamond',serif;">Cormorant Garamond</option>
+                        <option value="'Cinzel', serif" style="font-family:'Cinzel',serif;">Cinzel</option>
+                        <option value="'EB Garamond', serif" style="font-family:'EB Garamond',serif;">EB Garamond</option>
+                        <option value="'Libre Baskerville', serif" style="font-family:'Libre Baskerville',serif;">Libre Baskerville</option>
+                        <option value="'Playfair Display', serif" style="font-family:'Playfair Display',serif;">Playfair Display</option>
+                        <option value="'Lora', serif" style="font-family:'Lora',serif;">Lora</option>
+                        <option value="'Noto Serif JP', serif" style="font-family:'Noto Serif JP',serif;">Noto Serif JP</option>
+                        <option value="'Montserrat', sans-serif" style="font-family:'Montserrat',sans-serif;">Montserrat</option>
+                        <option value="'Pacifico', cursive" style="font-family:'Pacifico',cursive;">Pacifico</option>
+                        <option value="'Dancing Script', cursive" style="font-family:'Dancing Script',cursive;">Dancing Script</option>
+                        <option value="'Satisfy', cursive" style="font-family:'Satisfy',cursive;">Satisfy</option>
+                        <option value="'Comfortaa', sans-serif" style="font-family:'Comfortaa',sans-serif;">Comfortaa</option>
+                        <option value="'Nunito', sans-serif" style="font-family:'Nunito',sans-serif;">Nunito</option>
+                        <option value="'Quicksand', sans-serif" style="font-family:'Quicksand',sans-serif;">Quicksand</option>
+                        <option value="'Josefin Sans', sans-serif" style="font-family:'Josefin Sans',sans-serif;">Josefin Sans</option>
+                    </select>
+                </div>
                 <textarea id="input-quote" rows="2" placeholder="自己紹介を入力してね"></textarea>
             </div>
         </div>
@@ -675,8 +719,11 @@
     const inputFont = document.getElementById('input-font');
     inputFont.addEventListener('change', (e) => {
         document.documentElement.style.setProperty('--card-font', e.target.value);
-        // セレクト自体にもフォントを反映
         inputFont.style.fontFamily = e.target.value.replace(/'/g, '');
+        // 同期チェックがONなら自己紹介フォントも追従
+        if (document.getElementById('quote-font-sync').checked) {
+            document.getElementById('card-quote').style.fontFamily = e.target.value;
+        }
     });
 
     const inputCopyrightColor = document.getElementById('input-copyright-color');
@@ -701,14 +748,54 @@
         element.addEventListener('change', updateFn);
     });
 
-    // Quote: 空の場合は""を表示しない
+    // Quote: 5行制限
     const quoteInput = document.getElementById('input-quote');
-    const updateQuote = (e) => {
-        const value = e.target.value.trim();
-        document.getElementById('card-quote').innerText = value;
+    const clampQuote = () => {
+        const lines = quoteInput.value.split('\n');
+        if (lines.length > 5) {
+            quoteInput.value = lines.slice(0, 5).join('\n');
+        }
+        document.getElementById('card-quote').innerText = quoteInput.value.trim();
     };
-    quoteInput.addEventListener('input', updateQuote);
-    quoteInput.addEventListener('change', updateQuote);
+    // Enterキーで6行目に入ろうとしたらブロック
+    quoteInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const lines = quoteInput.value.split('\n');
+            if (lines.length >= 5) e.preventDefault();
+        }
+    });
+    quoteInput.addEventListener('input', clampQuote);
+    quoteInput.addEventListener('change', clampQuote);
+
+    // 自己紹介フォント：チェックボックス制御
+    const quoteFontSync = document.getElementById('quote-font-sync');
+    const quoteFontSelect = document.getElementById('quote-font-select');
+    const cardQuote = document.getElementById('card-quote');
+
+    function applyQuoteFont() {
+        if (quoteFontSync.checked) {
+            // 統一モード：Card Fontと同じにする
+            const cardFont = document.documentElement.style.getPropertyValue('--card-font') || "'Cormorant Garamond', serif";
+            cardQuote.style.fontFamily = cardFont;
+            quoteFontSelect.style.display = 'none';
+        } else {
+            // フリーモード：セレクタを表示して選択フォントを適用
+            quoteFontSelect.style.display = '';
+            const selectedFont = quoteFontSelect.value;
+            // フリーモード：CSSのvar(--card-font)を上書きするためシステムフォントを明示指定
+            cardQuote.style.fontFamily = selectedFont === 'inherit' ? "'Noto Sans JP', 'Hiragino Sans', sans-serif" : selectedFont;
+        }
+    }
+
+    quoteFontSync.addEventListener('change', applyQuoteFont);
+    quoteFontSelect.addEventListener('change', (e) => {
+        cardQuote.style.fontFamily = e.target.value === 'inherit' ? "'Noto Sans JP', 'Hiragino Sans', sans-serif" : e.target.value;
+        // セレクト自体にもフォントを反映
+        quoteFontSelect.style.fontFamily = e.target.value === 'inherit' ? '' : e.target.value.replace(/'/g, '');
+    });
+
+    // 初期化：デフォルトはCard Fontと統一
+    applyQuoteFont();
 
     function updateSlits() {
         const count = parseInt(inputSlitCount.value);
