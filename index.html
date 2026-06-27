@@ -31,6 +31,37 @@
             min-height: 100vh;
         }
 
+        /* タブUI（スマホのみ） */
+        .tab-bar {
+            display: flex;
+            background: #F2F2F7;
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+            margin-bottom: 16px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            background: transparent;
+            color: #8E8E93;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: #fff;
+            color: var(--text-color);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        @media (min-width: 900px) {
+            .tab-bar { display: none; }
+            .editor-panel, .preview-panel { display: flex !important; }
+        }
+
         .container {
             display: flex;
             flex-direction: column;
@@ -281,7 +312,11 @@
 <body>
 
 <div class="container">
-    <div class="editor-panel">
+    <div class="tab-bar">
+        <button class="tab-btn active" id="tab-editor" onclick="switchTab('editor')">✏️ エディタ</button>
+        <button class="tab-btn" id="tab-preview" onclick="switchTab('preview')">🖼️ プレビュー</button>
+    </div>
+    <div class="editor-panel" id="panel-editor">
         <div class="panel-section">
             <div class="section-title">Design Controls</div>
             <div class="form-group">
@@ -460,7 +495,7 @@
         <button class="btn btn-primary" id="download-btn">カードをダウンロード</button>
     </div>
 
-    <div class="preview-panel">
+    <div class="preview-panel" id="panel-preview" style="display:none;">
         <div id="card-scale-wrapper">
         <div id="character-card">
             <div class="slits-container" id="slits-container"></div>
@@ -637,18 +672,22 @@
     }, { passive: false });
 
     card.addEventListener('touchstart', (e) => {
-        if (!document.querySelector('.slit img')?.src) return;
+        e.preventDefault(); // Safariのスクロール・ジェスチャーを防ぐ
         isDragging = true;
         const touch = e.touches[0];
         startX = touch.clientX - imgX; startY = touch.clientY - imgY;
-    });
-    window.addEventListener('touchmove', (e) => {
+    }, { passive: false });
+    card.addEventListener('touchmove', (e) => {
+        e.preventDefault(); // Safariのスクロールを防ぐ
         if (!isDragging) return;
         const touch = e.touches[0];
         imgX = touch.clientX - startX; imgY = touch.clientY - startY;
         updateImagesTransform();
-    }, { passive: true });
-    window.addEventListener('touchend', () => { isDragging = false; });
+    }, { passive: false });
+    card.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        isDragging = false;
+    }, { passive: false });
 
     document.getElementById('download-btn').addEventListener('click', () => {
         const targetCard = document.getElementById('character-card');
@@ -675,6 +714,46 @@
             link.click();
         });
     });
+
+    function switchTab(tab) {
+        const editorPanel = document.getElementById('panel-editor');
+        const previewPanel = document.getElementById('panel-preview');
+        const tabEditor = document.getElementById('tab-editor');
+        const tabPreview = document.getElementById('tab-preview');
+
+        if (tab === 'editor') {
+            editorPanel.style.display = 'flex';
+            previewPanel.style.display = 'none';
+            tabEditor.classList.add('active');
+            tabPreview.classList.remove('active');
+        } else {
+            editorPanel.style.display = 'none';
+            previewPanel.style.display = 'flex';
+            tabPreview.classList.add('active');
+            tabEditor.classList.remove('active');
+            // プレビュータブを開いたときにスケール再計算
+            scaleCard();
+        }
+    }
+
+    // スマホ判定：900px未満はプレビューを非表示スタートに
+    function initLayout() {
+        if (window.innerWidth < 900) {
+            document.getElementById('panel-preview').style.display = 'none';
+            document.getElementById('panel-editor').style.display = 'flex';
+        } else {
+            document.getElementById('panel-editor').style.display = 'flex';
+            document.getElementById('panel-preview').style.display = 'flex';
+        }
+    }
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 900) {
+            document.getElementById('panel-editor').style.display = 'flex';
+            document.getElementById('panel-preview').style.display = 'flex';
+        }
+        scaleCard();
+    });
+    initLayout();
 </script>
 </body>
 </html>
