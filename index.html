@@ -867,6 +867,22 @@
                         clonedInfo.style.webkitBackdropFilter = 'none';
                         clonedInfo.style.background = `rgba(255,255,255,${opacity})`;
                     }
+                    // slits-containerのtransformをCSS変数から直接インライン化
+                    const angle = srcStyle.getPropertyValue('--slit-angle').trim() || '-18deg';
+                    const clonedSlits = clonedDoc.querySelector('.slits-container');
+                    if (clonedSlits) {
+                        clonedSlits.style.transform = `rotate(${angle})`;
+                    }
+                    // accent-colorをborder-leftに直接適用
+                    const accent = srcStyle.getPropertyValue('--accent-color').trim() || '#E0B0B0';
+                    if (clonedInfo) {
+                        clonedInfo.style.borderLeft = `4px solid ${accent}`;
+                    }
+                    // card-jobのcolorも直接適用
+                    const clonedJob = clonedDoc.getElementById('card-job');
+                    if (clonedJob) {
+                        clonedJob.style.color = accent;
+                    }
                 }
             }).then(canvas => {
                 // scaleを戻す
