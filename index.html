@@ -823,22 +823,42 @@
     window.addEventListener('resize', updateDownloadBtnLabel);
 
     function captureCard(callback) {
+        const wrapper = document.getElementById('card-scale-wrapper');
         const targetCard = document.getElementById('character-card');
-        const clone = targetCard.cloneNode(true);
-        clone.style.position = 'fixed';
-        clone.style.left = '-9999px';
-        clone.style.top = '0';
-        clone.style.width = '600px';
-        clone.style.height = '315px';
-        clone.style.transform = 'none';
-        document.body.appendChild(clone);
-        html2canvas(clone, {
-            scale: 1, useCORS: true, logging: false, backgroundColor: null,
-            width: 600, height: 315
-        }).then(canvas => {
-            document.body.removeChild(clone);
-            callback(canvas);
-        });
+
+        // wrapperのscaleを一時的に1に戻してカード本体を直接キャプチャ
+        const prevTransform = wrapper.style.transform;
+        const prevWidth = wrapper.style.width;
+        const prevHeight = wrapper.style.height;
+        const prevMarginBottom = wrapper.style.marginBottom;
+
+        wrapper.style.transform = 'scale(1)';
+        wrapper.style.width = '600px';
+        wrapper.style.height = '315px';
+        wrapper.style.marginBottom = '0px';
+
+        // 2フレーム待って再描画を確実にする
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            html2canvas(targetCard, {
+                scale: 1, useCORS: true, logging: false, backgroundColor: null,
+                width: 600, height: 315,
+                onclone: (doc) => {
+                    // CSS変数を複製ドキュメントにコピー
+                    const vars = ['--accent-color','--slit-angle','--box-opacity','--card-font'];
+                    const style = getComputedStyle(document.documentElement);
+                    vars.forEach(v => {
+                        doc.documentElement.style.setProperty(v, style.getPropertyValue(v));
+                    });
+                }
+            }).then(canvas => {
+                // scaleを元に戻す
+                wrapper.style.transform = prevTransform;
+                wrapper.style.width = prevWidth;
+                wrapper.style.height = prevHeight;
+                wrapper.style.marginBottom = prevMarginBottom;
+                callback(canvas);
+            });
+        }));
     }
 
     document.getElementById('download-btn').addEventListener('click', () => {
