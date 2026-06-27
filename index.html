@@ -888,17 +888,19 @@
             transform: wrapper.style.transform,
             width: wrapper.style.width,
             height: wrapper.style.height,
-            marginBottom: wrapper.style.marginBottom
+            marginBottom: wrapper.style.marginBottom,
+            overflow: targetCard.style.overflow
         };
         wrapper.style.transform = 'scale(1)';
         wrapper.style.width = '600px';
         wrapper.style.height = '315px';
         wrapper.style.marginBottom = '0';
+        targetCard.style.overflow = 'hidden'; // クリッピングを確実にする
 
-        // 再描画を2フレーム待ってからキャプチャ
-        requestAnimationFrame(() => requestAnimationFrame(() => {
+        // 再描画を3フレーム待ってからキャプチャ（スマホの遅い再描画に対応）
+        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
             html2canvas(targetCard, {
-                scale: 1, useCORS: true, logging: false, backgroundColor: null,
+                scale: 2, useCORS: true, logging: false, backgroundColor: null,
                 width: 600, height: 315
             }).then(canvas => {
                 // scaleを戻す
@@ -906,9 +908,10 @@
                 wrapper.style.width = prev.width;
                 wrapper.style.height = prev.height;
                 wrapper.style.marginBottom = prev.marginBottom;
+                targetCard.style.overflow = prev.overflow;
                 callback(canvas);
             });
-        }));
+        })));
     }
 
     document.getElementById('download-btn').addEventListener('click', () => {
