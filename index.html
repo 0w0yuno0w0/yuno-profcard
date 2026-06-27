@@ -837,12 +837,16 @@
 
     document.getElementById('download-btn').addEventListener('click', () => {
         if (isMobile()) {
-            // スマホ：モーダルで画像表示→長押し保存
-            captureCard((canvas) => {
-                const dataUrl = canvas.toDataURL('image/png');
-                document.getElementById('saved-card-img').src = dataUrl;
-                document.getElementById('save-modal').style.display = 'flex';
-            });
+            // スマホ：プレビュータブに切り替えてからキャプチャ
+            switchTab('preview');
+            // タブ切り替えと再描画を待つ
+            setTimeout(() => {
+                captureCard((canvas) => {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    document.getElementById('saved-card-img').src = dataUrl;
+                    document.getElementById('save-modal').style.display = 'flex';
+                });
+            }, 300);
         } else {
             // PC：従来通りダウンロード
             captureCard((canvas) => {
