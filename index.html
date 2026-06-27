@@ -858,6 +858,15 @@
                     srcImgs.forEach((img, i) => {
                         if (dstImgs[i]) dstImgs[i].style.transform = img.style.transform;
                     });
+                    // backdrop-filterをhtml2canvasが処理できないため、
+                    // info-areaの背景を通常のrgbaに差し替え
+                    const opacity = srcStyle.getPropertyValue('--box-opacity').trim() || '0.4';
+                    const clonedInfo = clonedDoc.querySelector('.info-area');
+                    if (clonedInfo) {
+                        clonedInfo.style.backdropFilter = 'none';
+                        clonedInfo.style.webkitBackdropFilter = 'none';
+                        clonedInfo.style.background = `rgba(255,255,255,${opacity})`;
+                    }
                 }
             }).then(canvas => {
                 // scaleを戻す
