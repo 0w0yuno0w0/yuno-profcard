@@ -599,6 +599,13 @@
             </div>
         </div>
         </div>
+        <div id="save-image-area" style="display:none; flex-direction:column; align-items:center; gap:8px; width:100%;">
+            <p style="font-size:12px; color:#8E8E93; text-align:center; margin:0;">
+                画像を長押しして「写真に保存」を選択してください。<br>
+                <span style="font-size:11px;">Long-press the image below and select "Save to Photos".</span>
+            </p>
+            <img id="saved-card-img" src="" alt="card" style="width:100%; max-width:600px; border-radius:4px; box-shadow:0 4px 16px rgba(0,0,0,0.12);">
+        </div>
         <div class="hint-text">
             <strong>画像の操作方法:</strong><br>
             カードの上を直接<strong>ドラッグ（スマホはスワイプ）</strong>すると画像を自由自在に移動できます。<br>
@@ -805,10 +812,18 @@
         if (e.touches.length === 0) isDragging = false;
     }, { passive: false });
 
-    document.getElementById('download-btn').addEventListener('click', () => {
-        const targetCard = document.getElementById('character-card');
+    const isMobile = () => window.innerWidth < 900 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-        // wrapperのscaleに関係なく、card本体（常に600x315）をクローンしてキャプチャ
+    // ボタンラベルをデバイスに合わせて初期化
+    function updateDownloadBtnLabel() {
+        const btn = document.getElementById('download-btn');
+        btn.textContent = isMobile() ? '画像を生成する / Generate Image' : 'カードをダウンロード / Download Card';
+    }
+    updateDownloadBtnLabel();
+    window.addEventListener('resize', updateDownloadBtnLabel);
+
+    function captureCard(callback) {
+        const targetCard = document.getElementById('character-card');
         const clone = targetCard.cloneNode(true);
         clone.style.position = 'fixed';
         clone.style.left = '-9999px';
@@ -817,18 +832,39 @@
         clone.style.height = '315px';
         clone.style.transform = 'none';
         document.body.appendChild(clone);
-
         html2canvas(clone, {
             scale: 1, useCORS: true, logging: false, backgroundColor: null,
             width: 600, height: 315
         }).then(canvas => {
             document.body.removeChild(clone);
-            const link = document.createElement('a');
-            const name = document.getElementById('card-name').innerText || 'card';
-            link.download = `${name}_card.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            callback(canvas);
         });
+    }
+
+    document.getElementById('download-btn').addEventListener('click', () => {
+        if (isMobile()) {
+            // スマホ：画像をプレビュー下に表示して長押し保存
+            // プレビュータブに切り替え
+            switchTab('preview');
+            captureCard((canvas) => {
+                const dataUrl = canvas.toDataURL('image/png');
+                const saveArea = document.getElementById('save-image-area');
+                const img = document.getElementById('saved-card-img');
+                img.src = dataUrl;
+                saveArea.style.display = 'flex';
+                // スムーズにスクロール
+                setTimeout(() => saveArea.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+            });
+        } else {
+            // PC：従来通りダウンロード
+            captureCard((canvas) => {
+                const link = document.createElement('a');
+                const name = document.getElementById('card-name').innerText || 'card';
+                link.download = `${name}_card.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
     });
 
     function switchTab(tab) {
