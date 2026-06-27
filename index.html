@@ -217,8 +217,8 @@
         #card-scale-wrapper {
             width: 600px;
             height: 315px;
-            transform-origin: top left;
-            overflow: hidden;
+            transform-origin: top center;
+            overflow: visible;
             flex-shrink: 0;
         }
 
@@ -531,11 +531,14 @@
         const panel = wrapper.parentElement;
         const panelWidth = panel.clientWidth - 40;
         const scale = Math.min(1, panelWidth / 600);
+        // 常に600pxのままscaleで縮小、高さだけ詰める
+        wrapper.style.width = '600px';
         wrapper.style.transform = `scale(${scale})`;
-        // wrapperの表示高さをscale後に合わせる
         const scaledHeight = Math.round(315 * scale);
-        wrapper.style.height = scaledHeight + 'px';
-        wrapper.style.width = Math.round(600 * scale) + 'px';
+        // transform-origin: top center なので左右marginで中央寄せ
+        const sideMargin = Math.round((panelWidth - 600) / 2);
+        wrapper.style.marginLeft = sideMargin + 'px';
+        wrapper.style.marginBottom = (scaledHeight - 315) + 'px';
     }
 
     window.addEventListener('DOMContentLoaded', () => {
