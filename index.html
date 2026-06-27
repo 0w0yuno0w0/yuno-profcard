@@ -652,11 +652,25 @@
 
     document.getElementById('download-btn').addEventListener('click', () => {
         const targetCard = document.getElementById('character-card');
-        html2canvas(targetCard, {
-            scale: 1, useCORS: true, logging: false, backgroundColor: null
+
+        // wrapperのscaleに関係なく、card本体（常に600x315）をクローンしてキャプチャ
+        const clone = targetCard.cloneNode(true);
+        clone.style.position = 'fixed';
+        clone.style.left = '-9999px';
+        clone.style.top = '0';
+        clone.style.width = '600px';
+        clone.style.height = '315px';
+        clone.style.transform = 'none';
+        document.body.appendChild(clone);
+
+        html2canvas(clone, {
+            scale: 1, useCORS: true, logging: false, backgroundColor: null,
+            width: 600, height: 315
         }).then(canvas => {
+            document.body.removeChild(clone);
             const link = document.createElement('a');
-            link.download = `${document.getElementById('card-name').innerText}_card.png`;
+            const name = document.getElementById('card-name').innerText || 'card';
+            link.download = `${name}_card.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
         });
