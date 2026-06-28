@@ -434,7 +434,12 @@
             </div>
             
             <div class="form-group">
-                <label>DC / Server</label>
+                <label style="display:flex;align-items:center;justify-content:space-between;">
+                    <span>DC / Server</span>
+                    <span style="font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;cursor:pointer;">
+                        <input type="checkbox" id="server-free-check"> フリー入力
+                    </span>
+                </label>
                 <select id="input-server">
                     <option value="">— 選択してください —</option>
                     <optgroup label="Elemental">
@@ -559,10 +564,16 @@
                         <option value="KOREA / NYDHOGG">Nydhogg (Korea)</option>
                     </optgroup>
                 </select>
+                <input type="text" id="input-server-free" placeholder="フリー入力" style="display:none;" maxlength="40">
             </div>
             
             <div class="form-group">
-                <label>Main Job</label>
+                <label style="display:flex;align-items:center;justify-content:space-between;">
+                    <span>Main Job</span>
+                    <span style="font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;cursor:pointer;">
+                        <input type="checkbox" id="job-free-check"> フリー入力
+                    </span>
+                </label>
                 <select id="input-job">
                     <option value="">— 選択してください —</option>
                     <optgroup label="TANK">
@@ -600,6 +611,7 @@
                         <option value="BLUE MAGE">青魔道士 (Blue Mage)</option>
                     </optgroup>
                 </select>
+                <input type="text" id="input-job-free" placeholder="フリー入力" style="display:none;" maxlength="40">
             </div>
             
             <div class="form-group">
@@ -607,7 +619,7 @@
                 <div class="quote-font-row">
                     <label>
                         <input type="checkbox" id="quote-font-sync" checked>
-                        Card Fontと統一
+                        Card Fontに統一
                     </label>
                     <select id="quote-font-select" class="color-select" style="display:none;">
                         <option value="inherit">— システムフォント (Free)</option>
@@ -648,7 +660,7 @@
                     <div class="char-name" id="card-name"></div>
                 </div>
                 <div>
-                    <div class="job-text">MAIN JOB // <span id="card-job" style="color: var(--accent-color);"></span></div>
+                    <div class="job-text"><span id="card-job-prefix">MAIN JOB // </span><span id="card-job" style="color: var(--accent-color);"></span></div>
                     <div class="quote-text" id="card-quote"></div>
                 </div>
             </div>
@@ -720,10 +732,6 @@
     inputFont.addEventListener('change', (e) => {
         document.documentElement.style.setProperty('--card-font', e.target.value);
         inputFont.style.fontFamily = e.target.value.replace(/'/g, '');
-        // 同期チェックがONなら自己紹介フォントも追従
-        if (document.getElementById('quote-font-sync').checked) {
-            document.getElementById('card-quote').style.fontFamily = e.target.value;
-        }
     });
 
     const inputCopyrightColor = document.getElementById('input-copyright-color');
@@ -738,14 +746,55 @@
         updateImagesTransform();
     });
 
-    // テキスト・セレクト入力の反映
-    ['name', 'server', 'job'].forEach(id => {
-        const element = document.getElementById(`input-${id}`);
-        const updateFn = (e) => {
-            document.getElementById(`card-${id}`).innerText = e.target.value;
-        };
-        element.addEventListener('input', updateFn);
-        element.addEventListener('change', updateFn);
+    // テキスト・セレクト入力の反映（name のみ）
+    const inputName = document.getElementById('input-name');
+    const updateName = (e) => { document.getElementById('card-name').innerText = e.target.value; };
+    inputName.addEventListener('input', updateName);
+    inputName.addEventListener('change', updateName);
+
+    // DC/Server: select ↔ フリー切替
+    const serverSelect = document.getElementById('input-server');
+    const serverFree   = document.getElementById('input-server-free');
+    const serverCheck  = document.getElementById('server-free-check');
+    const cardServer   = document.getElementById('card-server');
+
+    const updateServer = () => {
+        cardServer.innerText = serverCheck.checked ? serverFree.value : serverSelect.value;
+    };
+    serverCheck.addEventListener('change', () => {
+        const isFree = serverCheck.checked;
+        serverSelect.style.display = isFree ? 'none' : '';
+        serverFree.style.display   = isFree ? ''     : 'none';
+        updateServer();
+    });
+    serverSelect.addEventListener('change', updateServer);
+    serverFree.addEventListener('input', updateServer);
+
+    // Main Job: select ↔ フリー切替 + MAIN JOB// プレフィックス制御
+    const jobSelect  = document.getElementById('input-job');
+    const jobFree    = document.getElementById('input-job-free');
+    const jobCheck   = document.getElementById('job-free-check');
+    const cardJob    = document.getElementById('card-job');
+    const cardJobPfx = document.getElementById('card-job-prefix');
+
+    const updateJob = () => {
+        cardJob.innerText = jobCheck.checked ? jobFree.value : jobSelect.value;
+    };
+    jobCheck.addEventListener('change', () => {
+        const isFree = jobCheck.checked;
+        jobSelect.style.display  = isFree ? 'none' : '';
+        jobFree.style.display    = isFree ? ''     : 'none';
+        cardJobPfx.style.display = isFree ? 'none' : '';  // MAIN JOB// を隠す
+        updateJob();
+    });
+    jobSelect.addEventListener('change', updateJob);
+    jobFree.addEventListener('input', updateJob);
+
+    // Card Font変更時にquote syncへ追従
+    document.getElementById('input-font').addEventListener('change', (e) => {
+        if (document.getElementById('quote-font-sync').checked) {
+            document.getElementById('card-quote').style.fontFamily = e.target.value;
+        }
     });
 
     // Quote: 5行制限
