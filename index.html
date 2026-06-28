@@ -790,6 +790,13 @@
     jobSelect.addEventListener('change', updateJob);
     jobFree.addEventListener('input', updateJob);
 
+    // 初期化：チェックなし状態でセレクトを表示、フリー入力を非表示に
+    serverSelect.style.display = '';
+    serverFree.style.display   = 'none';
+    jobSelect.style.display    = '';
+    jobFree.style.display      = 'none';
+    cardJobPfx.style.display   = '';
+
     // Card Font変更時にquote syncへ追従
     document.getElementById('input-font').addEventListener('change', (e) => {
         if (document.getElementById('quote-font-sync').checked) {
